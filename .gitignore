@@ -1,0 +1,26 @@
+# .NET build outputs
+Fasto/bin/
+Fasto/obj/
+
+# FsLexYacc generated files
+Fasto/Lexer.fs
+Fasto/Lexer.fsi
+Fasto/Parser.fs
+Fasto/Parser.fsi
+Fasto/Parser.fsyacc.output
+
+# Compiled RISC-V assembly output
+tests/*.asm
+
+# User-specific VS/Rider files
+.vs/
+.vscode/
+.zed/
+.idea/
+*.pdf
+*.user
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -169,9 +169,9 @@ let rec compileExp  (e      : TypedExp)
   | Constant (IntVal n, pos) ->
       [ LI (place, n) ] (* assembler will generate appropriate
                            instruction sequence for any value n *)
-  | Constant (BoolVal p, _) ->
+  | Constant (BoolVal p, pos) ->
       (* TODO project task 1: represent `true`/`false` values as `1`/`0` *)
-      failwith "Unimplemented code generation for boolean constants"
+      [ LI (place, if p then 1 else 0) ]
   | Constant (CharVal c, pos) ->
       [ LI (place, int c) ]
 
@@ -245,17 +245,28 @@ let rec compileExp  (e      : TypedExp)
      version, but remember to come back and clean it up later.
      `Not` and `Negate` are simpler; you can use `XORI` for `Not`
   *)
-  | Times (_, _, _) ->
-      failwith "Unimplemented code generation of multiplication"
+  | Times (e1, e2, pos) ->
+      let t1 = newReg "times_L"
+      let t2 = newReg "times_R"
+      let code1 = compileExp e1 vtable t1
+      let code2 = compileExp e2 vtable t2
+      code1 @ code2 @ [MUL (place, t1,t2)]
 
-  | Divide (_, _, _) ->
-      failwith "Unimplemented code generation of division"
+  | Divide (e1, e2, pos) ->
+    let t1 = newReg "divide_L"
+    let t2 = newReg "divide_R"
+    let code1 = compileExp e1 vtable t1
+    let code2 = compileExp e2 vtable t2
+    code1 @ code2 @ [DIV (place, t1,t2)]
 
-  | Not (_, _) ->
-      failwith "Unimplemented code generation of not"
+  | Not (e, pos) ->
+      let code1 = compileExp e vtable place
+      code1 @ [XORI (place, place, 1)]
+      
 
-  | Negate (_, _) ->
-      failwith "Unimplemented code generation of negate"
+  | Negate (e, pos) ->
+      let code1 = compileExp e vtable place
+      code1 @ [SUB (place, Rzero, place)]
 
   | Let (dec, e1, pos) ->
       let (code1, vtable1) = compileDec dec vtable
@@ -346,11 +357,24 @@ let rec compileExp  (e      : TypedExp)
         in `e1 || e2` if the execution of `e1` will evaluate to `true` then
         the code of `e2` must not be executed. Similarly for `And` (&&).
   *)
-  | And (_, _, _) ->
-      failwith "Unimplemented code generation of &&"
+  | And (e1, e2, pos) ->
+      let label_end = newLab "and_end"
+      let code1 = compileExp e1 vtable place
+      let code2 = compileExp e2 vtable place
+      code1
+      @ [ BEQ (place, Rzero, label_end) ] // if e1 is false, skip e2
+      @ code2                             // only runs if e1 is true
+      @ [ LABEL label_end ]
+      
 
-  | Or (_, _, _) ->
-      failwith "Unimplemented code generation of ||"
+  | Or (e1, e2, pos) ->
+      let label_end = newLab "or_end"
+      let code1 = compileExp e1 vtable place
+      let code2 = compileExp e2 vtable place
+      code1
+      @ [ BNE (place, Rzero, label_end) ] // if e1 is true, skip e2
+      @ code2                             // only runs if e1 is false
+      @ [ LABEL label_end ]
 
   (* Indexing:
      1. generate code to compute the index

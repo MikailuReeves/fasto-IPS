@@ -1,0 +1,4 @@
+Unhandled exception. System.Exception: Invalid file name or empty file
+   at Fasto.parseFastoFile(String filename) in F:\Repos\fasto-IPS\Fasto\Fasto.fs:line 147
+   at Fasto.compile(String filename, FSharpFunc`2 optimiser) in F:\Repos\fasto-IPS\Fasto\Fasto.fs:line 150
+   at Fasto.main(String[] paramList) in F:\Repos\fasto-IPS\Fasto\Fasto.fs:line 212

@@ -1,0 +1,23 @@
+fun int multiply(int x, int y) = x * y
+
+fun int divide(int x, int y) = x / y
+
+fun int negate(int x) = ~x
+
+fun bool myNot(bool b) = not b
+
+fun bool myAnd(bool a, bool b) = a && b
+
+fun bool myOr(bool a, bool b) = a || b
+
+fun int main() =
+  let a = 6 in
+  let b = 3 in
+  let product = write(multiply(a, b)) in
+  let quotient = write(divide(a, b)) in
+  let neg = write(negate(a)) in
+  let t = write(myAnd(true, false)) in
+  let f = write(myOr(false, true)) in
+  let n = write(myNot(false)) in
+  let x = 1; z=2; y=50; w = write(x+y+z) in
+  0
