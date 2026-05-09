@@ -20,6 +20,7 @@ tests/*.asm
 *.pdf
 *.user
 *.suo
+*.out-testresult
 
 # OS
 .DS_Store

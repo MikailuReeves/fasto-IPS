@@ -270,8 +270,17 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
          the value of `a`; otherwise raise an error (containing
          a meaningful message).
   *)
-  | Replicate (_, _, _, _) ->
-        failwith "Unimplemented interpretation of replicate"
+  | Replicate (e1, e2, t, pos) ->
+        let n = evalExp(e1, vtab, ftab)
+        let a = evalExp(e2, vtab, ftab)
+        let a_type = valueType a
+        match n with
+        | IntVal n -> 
+            if n >= 0 
+            then ArrayVal (List.replicate n a, a_type)
+            else let msg = sprintf "Argument of \"replicate\" is negative: %i" n
+                 raise (MyError(msg, pos))
+        | _ -> reportWrongType "1st Argument of \"replicate\"" Int n pos
 
   (* TODO project task 2: `filter(p, arr)`
        pattern match the implementation of map:

@@ -43,7 +43,7 @@ let parse_error_rich =
 //keywords
 %token <Position> BOOL CHAR ELSE FN FUN IF IN INT LET THEN TRUE
 //specials
-%token <Position> IOTA LENGTH MAP READ REDUCE WRITE
+%token <Position> IOTA LENGTH MAP READ REDUCE WRITE FILTER REPLICATE SCAN
 //symbols
 %token <Position> MINUS PLUS DEQ LTH TIMES DIVIDE
 %token <Position> AND OR NOT TILDE FALSE
@@ -131,8 +131,14 @@ Exp : NUM            { Constant (IntVal (fst $1), snd $1) }
                      { Iota ($3, $1) }
     | LENGTH LPAR Exp RPAR
                      { Length ($3, (), $1) }
+    | REPLICATE LPAR Exp COMMA Exp RPAR
+                     { Replicate ($3, $5, (), $1) }
+    | FILTER LPAR FunArg COMMA Exp RPAR
+                     { Filter ($3, $5, (), $1) }
     | MAP LPAR FunArg COMMA Exp RPAR
                      { Map ($3, $5, (), (), $1) }
+    | SCAN LPAR FunArg COMMA Exp COMMA Exp RPAR
+                     { Scan ($3, $5, $7, (), $1) }
     | REDUCE LPAR FunArg COMMA Exp COMMA Exp RPAR
                      { Reduce ($3, $5, $7, (), $1) }
     | LPAR Exp RPAR  { $2 }
