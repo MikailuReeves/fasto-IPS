@@ -654,8 +654,62 @@ let rec compileExp  (e      : TypedExp)
         the current location of the result iterator at every iteration of
         the loop.
   *)
-  | Scan (_, _, _, _, _) ->
-      failwith "Unimplemented code generation of scan"
+  | Scan (binop, acc_exp, arr_exp, tp, pos) ->
+    let arr_reg  = newReg "arr"
+    let size_reg = newReg "size"
+    let acc_reg  = newReg "acc"
+    let elem_reg = newReg "elem"
+    let in_reg   = newReg "in_ptr"
+    let out_reg  = newReg "out_ptr"
+    let i_reg    = newReg "i"
+
+    let loop_beg = newLab "loop_beg"
+    let loop_end = newLab "loop_end"
+
+    let arr_code = compileExp arr_exp vtable arr_reg
+    let acc_code = compileExp acc_exp vtable acc_reg
+
+    let elem_size = getElemSize tp
+    let elem_step = elemSizeToInt elem_size
+
+    let init_code =
+        [ LW (size_reg, arr_reg, 0) ]
+
+    let ptr_code =
+        [ ADDI (in_reg, arr_reg, 4)
+        ; ADDI (out_reg, place, 4)
+        ; MV (i_reg, Rzero)
+        ]
+
+    let loop_header =
+        [ LABEL loop_beg
+        ; BGE (i_reg, size_reg, loop_end)
+        ]
+
+    let loop_body =
+        [ Load elem_size (elem_reg, in_reg, 0)
+        ; ADDI (in_reg, in_reg, elem_step)
+        ]
+        @ applyFunArg (binop, [acc_reg; elem_reg], vtable, acc_reg, pos)
+        @
+        [ Store elem_size (acc_reg, out_reg, 0)
+        ; ADDI (out_reg, out_reg, elem_step)
+        ]
+
+    let loop_footer =
+        [ ADDI (i_reg, i_reg, 1)
+        ; J loop_beg
+        ; LABEL loop_end
+        ]
+
+    arr_code
+    @ init_code
+    @ acc_code
+    @ dynalloc (size_reg, place, tp)
+    @ ptr_code
+    @ loop_header
+    @ loop_body
+    @ loop_footer
 
 and applyFunArg ( ff     : TypedFunArg
                 , args   : reg list
