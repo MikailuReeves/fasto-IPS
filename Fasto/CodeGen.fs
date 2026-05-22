@@ -39,7 +39,7 @@ let newLab lab_name = newName ("l." + lab_name)
 (* given to them *)
 let stringTable : ((addr*string) list) ref = ref []
 
-(* Building a string constant, including length word *)
+    (* Building a string constant, including length word *)
 let buildString  ( label : addr
                  , str   : string
                  ) : Instruction list =
@@ -644,8 +644,63 @@ let rec compileExp  (e      : TypedExp)
          counter computed in step (c). You do this of course with a
          `SW(counter_reg, place, 0)` instruction.
   *)
-  | Filter (_, _, _, _) ->
-      failwith "Unimplemented code generation of filter"
+  | Filter (farg, arr_exp, ret_type, pos) ->
+    let size_reg = newReg "size"
+    let arr_reg  = newReg "arr"
+    let elem_reg = newReg "elem"
+    let res_reg = newReg "res"
+    let arr_code = compileExp arr_exp vtable arr_reg
+
+    let get_size = [ LW (size_reg, arr_reg, 0) ]
+    let addr_reg = newReg "addrg"
+    let i_reg = newReg "i"
+    let init_regs = [ ADDI (addr_reg, place, 4)
+                    ; MV (i_reg, Rzero)
+                    ; ADDI (elem_reg, arr_reg, 4)
+                    ]
+
+    let loop_beg = newLab "loop_beg"
+    let loop_end = newLab "loop_end"
+    let loop_header = [ LABEL (loop_beg)
+                        ; BGE (i_reg, size_reg, loop_end)
+                        ]
+
+    let skip_lab = newLab "skip_lab"
+
+    let acc_reg = newReg "acc"
+    let init_acc = [ MV (acc_reg, Rzero) ]
+
+    let elem_size = getElemSize ret_type
+    let orig_reg = newReg "orig"
+    let loop_filter =
+        [ Load elem_size (orig_reg, elem_reg, 0)
+        ; ADDI (elem_reg, elem_reg, elemSizeToInt elem_size)
+        ]
+        @ applyFunArg(farg, [orig_reg], vtable, res_reg, pos)  // orig_reg in, res_reg out
+        @
+        [ BEQ (res_reg, Rzero, skip_lab)
+        ; Store elem_size (orig_reg, addr_reg, 0) 
+        ; ADDI (addr_reg, addr_reg, elemSizeToInt elem_size)
+        ; ADDI (acc_reg, acc_reg, 1)
+        ; LABEL skip_lab
+        ]
+
+    let loop_footer =
+            [ ADDI (i_reg, i_reg, 1)
+            ; J loop_beg
+            ; LABEL loop_end
+            ]
+            @ [ SW (acc_reg, place, 0)]
+
+    arr_code 
+        @ get_size
+        @ dynalloc (size_reg, place, ret_type)
+        @ init_acc
+        @ init_regs
+        @ loop_header
+        @ loop_filter
+        @ loop_footer
+    
 
   (* TODO project task 2: see also the comment to replicate.
      `scan(f, ne, arr)`: you can inspire yourself from the implementation of

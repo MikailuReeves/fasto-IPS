@@ -303,7 +303,7 @@ and checkExp  (ftab : FunTable)
     | Replicate (n_exp, a_exp, _, pos) ->
         let (n_type, n_dec) = checkExp ftab vtab n_exp
         let (a_type, a_dec) = checkExp ftab vtab a_exp
-        if n_type <> Int then reportTypeWrongKind "first argument of replicate" "int" n_type pos 
+        if n_type <> Int then reportTypeWrongKind "first argument of replicate" "int" n_type pos
         (a_type, Replicate (n_dec, a_dec, a_type, pos))
 
     (* TODO project task 2: Hint for `filter(f, arr)`
@@ -315,8 +315,26 @@ and checkExp  (ftab : FunTable)
             - `arr` should be of type `[ta]`
             - the result of filter should have type `[ta]`
     *)
-    | Filter (_, _, _, _) ->
-        failwith "Unimplemented type check of filter"
+    | Filter(f, arr_exp, _, pos) ->
+        let (arr_type, arr_exp_dec) = checkExp ftab vtab arr_exp
+
+        let elem_type =
+            match arr_type with
+            | Array t -> t
+            | _ -> reportTypeWrongKind "second argument of filter" "array" arr_type pos
+
+        let (f', f_res_type, f_arg_type) =
+            match checkFunArg ftab vtab pos f with
+            | (f', res, [ a1 ]) -> (f', res, a1)
+            | (_, res, args) -> reportArityWrong "first argument of filter" 1 (args, res) pos
+
+        if f_res_type <> Bool then
+            reportTypeWrong "return type of filter predicate" Bool f_res_type pos
+        if elem_type <> f_arg_type then
+            reportTypesDifferent "function-argument and array-element types in filter"
+                                    f_arg_type elem_type pos
+
+        (Array elem_type, Filter(f', arr_exp_dec, elem_type, pos))
 
     (* TODO project task 2: `scan(f, ne, arr)`
         Hint: Implementation is very similar to `reduce(f, ne, arr)`.
