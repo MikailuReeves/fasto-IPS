@@ -611,7 +611,7 @@ let rec compileExp  (e      : TypedExp)
                       ; BGE (i_reg, size_reg, loop_end)
                       ]
     
-    let loop_replicate = [ SW (val_reg, addr_reg, 0) ] // copy a to the location in the array
+    let loop_replicate = [ Store (getElemSize tp) (val_reg, addr_reg, 0) ] // copy a to the location in the array
     let loop_footer = [ ADDI (addr_reg, addr_reg,  elemSizeToInt (getElemSize tp))
                       ; ADDI (i_reg, i_reg, 1)
                       ; J loop_beg
