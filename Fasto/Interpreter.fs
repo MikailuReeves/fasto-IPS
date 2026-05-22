@@ -290,8 +290,17 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
          that the return value is a boolean at all);
        - create an `ArrayVal` from the (list) result of the previous step.
   *)
-  | Filter (_, _, _, _) ->
-        failwith "Unimplemented interpretation of filter"
+  | Filter (farg, arrexp, _, pos) ->
+      let arr = evalExp(arrexp, vtab, ftab)
+      match arr with
+      | ArrayVal (lst, tp1) ->
+          let flst = List.filter (fun x ->
+              match evalFunArg (farg, vtab, ftab, pos, [x]) with
+              | BoolVal b -> b
+              | v -> reportWrongType "predicate in filter" Bool v pos) lst
+          ArrayVal(flst, tp1)
+      | _ -> reportNonArray "2nd argument of \"filter\"" arr pos
+
 
   (* TODO project task 2: `scan(f, ne, arr)`
      Implementation similar to reduce, except that it produces an array
