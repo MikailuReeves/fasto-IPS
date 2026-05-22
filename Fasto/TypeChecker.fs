@@ -125,10 +125,6 @@ and checkExp  (ftab : FunTable)
         let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
         (Int, Minus (e1_dec, e2_dec, pos))
 
-    (* TODO project task 1:
-        Implement by pattern matching Plus/Minus above.
-        See `AbSyn.fs` for the expression constructors of `Times`, ...
-    *)
     | Times (e1, e2, pos) ->
         let (e1_dec, e2_dec) = checkBinOp ftab vtab (pos, Int, e1, e2)
         (Int, Times (e1_dec, e2_dec, pos))
@@ -290,31 +286,12 @@ and checkExp  (ftab : FunTable)
                                f_argres_type e_type pos
         (f_argres_type, Reduce (f', e_dec, arr_dec, elem_type, pos))
 
-    (* TODO project task 2:
-        See `AbSyn.fs` for the expression constructors of
-        `Replicate`, `Filter`, `Scan`.
-
-        Hints for `replicate(n, a)`:
-        - recursively type check `n` and `a`
-        - check that `n` has integer type
-        - assuming `a` is of type `t` the result type
-          of replicate is `[t]`
-    *)
     | Replicate (n_exp, a_exp, _, pos) ->
         let (n_type, n_dec) = checkExp ftab vtab n_exp
         let (a_type, a_dec) = checkExp ftab vtab a_exp
         if n_type <> Int then reportTypeWrongKind "first argument of replicate" "int" n_type pos
         (Array a_type, Replicate (n_dec, a_dec, a_type, pos))
 
-    (* TODO project task 2: Hint for `filter(f, arr)`
-        Look into the type-checking lecture slides for the type rule of `map`
-        and think of what needs to be changed for filter (?)
-        Use `checkFunArg` to get the signature of the function argument `f`.
-        Check that:
-            - `f` has type `ta -> Bool`
-            - `arr` should be of type `[ta]`
-            - the result of filter should have type `[ta]`
-    *)
     | Filter(f, arr_exp, _, pos) ->
         let (arr_type, arr_exp_dec) = checkExp ftab vtab arr_exp
 
@@ -336,12 +313,6 @@ and checkExp  (ftab : FunTable)
 
         (Array elem_type, Filter(f', arr_exp_dec, elem_type, pos))
 
-    (* TODO project task 2: `scan(f, ne, arr)`
-        Hint: Implementation is very similar to `reduce(f, ne, arr)`.
-              (The difference between `scan` and `reduce` is that
-              scan's return type is the same as the type of `arr`,
-              while reduce's return type is that of an element of `arr`).
-    *)
     | Scan (f, ne_exp, arr_exp, _, pos) ->
     let (ne_type, ne_dec) = checkExp ftab vtab ne_exp
     let (arr_type, arr_dec) = checkExp ftab vtab arr_exp
