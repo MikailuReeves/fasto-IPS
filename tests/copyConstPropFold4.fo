@@ -1,0 +1,4 @@
+fun int main() =
+  let cond = 3 < 5 in
+  let result = if cond then 42 else 0 in
+  write(result)

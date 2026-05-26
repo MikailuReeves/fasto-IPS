@@ -1,0 +1,7 @@
+fun int main() =
+  let x =
+    let a = 3 in
+    let b = 4 in
+    a + b
+  in
+  write(x)

@@ -1,0 +1,5 @@
+fun int main() =
+  let b = not true in
+  let c = not b in
+  let r = if c then 99 else 0 in
+  write(r)
