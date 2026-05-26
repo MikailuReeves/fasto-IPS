@@ -1,0 +1,8 @@
+fun int main() =
+  let a = true in
+  let b = false in
+  let c = a && b in
+  let d = b || a in
+  let r1 = if c then 1 else 0 in
+  let r2 = if d then 10 else 0 in
+  write(r1 + r2)

@@ -16,6 +16,24 @@ type Propagatee =
 
 type VarTable = SymTab.SymTab<Propagatee>
 
+// helper function to check if its safe to optimize a variable
+let rec isFreeIn (name : string) (e : TypedExp) : bool =
+    match e with 
+    | Var (vname, pos) -> vname = name
+    | Plus (e1, e2, _) | Minus (e1, e2, _) | Times (e1, e2, _)
+    | Divide (e1, e2, _) | And (e1, e2, _) | Or (e1, e2, _)
+    | Equal (e1, e2, _) | Less (e1, e2, _) -> isFreeIn name e1 || isFreeIn name e2
+    | Let (Dec (vname, ed, decpos), body, _) -> isFreeIn name ed || (vname <> name && isFreeIn name body)
+    | Not (e, _) | Negate (e, _) | Iota (e, _)
+    | Length (e, _, _) | Write (e, _, _) -> isFreeIn name e
+    | Apply (_, args, _) -> List.exists (isFreeIn name) args
+    | If (e1, e2, e3, _) -> isFreeIn name e1 || isFreeIn name e2 || isFreeIn name e3
+    | _ -> false
+
+let removeStaleVarProps (name : string) (vtable : VarTable) : VarTable =
+    SymTab.fromList (List.filter (fun (_, prop) -> prop <> VarProp name) (SymTab.toList vtable))
+
+    
 let rec copyConstPropFoldExp (vtable : VarTable)
                              (e      : TypedExp) =
     match e with
@@ -40,23 +58,29 @@ let rec copyConstPropFoldExp (vtable : VarTable)
             let ed' = copyConstPropFoldExp vtable ed
             match ed' with
                 | Var (vname, _) ->
-                    let vtable' = SymTab.bind name (VarProp vname) vtable   // let x = y in; return just y for future lookups
+                    let vtable' = removeStaleVarProps name (SymTab.bind name (VarProp vname) vtable)   // let x = y in; return just y for future lookups
                     let body' = copyConstPropFoldExp vtable' body
                     Let (Dec (name, ed', decpos), body', pos)
                     
                 | Constant (cname, _) ->
-                    let vtable' = SymTab.bind name (ConstProp cname) vtable // let x = 5 in; return just 5 
+                    let vtable' = removeStaleVarProps name (SymTab.bind name (ConstProp cname) vtable) // let x = 5 in; return just 5 
                     let body' = copyConstPropFoldExp vtable' body
                     Let (Dec (name, ed', decpos), body', pos)
                     
-                | Let (Dec (iname, ied, idecpos), ibody, ipos) ->
-                    let ibody = Let (Dec (name, ed, decpos), body, pos)
-                    let restructured = Let (Dec (iname, ied, idecpos), ibody, ipos)
-                    copyConstPropFoldExp vtable restructured
+                | Let (Dec (iname, ied, idecpos), ibody_inner, ipos) ->
+                    let inner = Let (Dec (name, ibody_inner, decpos), body, pos)
+                    let restructured = Let (Dec (iname, ied, idecpos), inner, ipos)
+
+                    if not (isFreeIn iname body) then
+                        copyConstPropFoldExp vtable restructured
+                    else 
+                        let body' = copyConstPropFoldExp vtable body
+                        Let (Dec (name, ed', decpos), body', pos)
 
 
                 | _ -> (* Fallthrough - for everything else, just optimize body *)
-                    let body' = copyConstPropFoldExp vtable body
+                    let vtable' = removeStaleVarProps name vtable
+                    let body' = copyConstPropFoldExp vtable' body
                     Let (Dec (name, ed', decpos), body', pos)
                       (* Or maybe rename the inner bound variable
                          to some fresh identifier, to avoid inadvertently

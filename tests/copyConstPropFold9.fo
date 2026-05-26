@@ -1,0 +1,7 @@
+fun int main() =
+  let x = 10 in
+  let y = 2 in
+  let z = x / y in
+  let b = z == 5 in
+  let r = if b then 1 else 0 in
+  write(r)
