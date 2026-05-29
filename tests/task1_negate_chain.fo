@@ -1,0 +1,5 @@
+fun int main() =
+  let x = read(int) in
+  let a = ~~x in
+  let b = ~~~x in
+  write(a + b)

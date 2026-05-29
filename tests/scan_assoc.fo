@@ -1,0 +1,4 @@
+fun int writeInt(int x) = write(x)
+
+fun [int] main() =
+  map(writeInt, scan(fn int (int a, int b) => a + b, 0, {1, 2, 3, 4}))
