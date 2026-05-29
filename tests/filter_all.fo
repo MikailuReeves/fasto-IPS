@@ -1,0 +1,4 @@
+fun int writeInt(int x) = write(x)
+
+fun [int] main() =
+  map(writeInt, filter(fn bool (int x) => true, iota(5)))

@@ -1,0 +1,9 @@
+fun int b2i(bool b) = if b then 1 else 0
+
+fun int main() =
+  let a = write(b2i(not true)) in
+  let b = write(b2i(not false)) in
+  let c = write(b2i(true && false)) in
+  let d = write(b2i(true || false)) in
+  let e = write(b2i(false || false)) in
+  write(b2i(true && true))

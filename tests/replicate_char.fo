@@ -1,0 +1,2 @@
+fun [char] main() =
+  write(replicate(4, 'a'))
